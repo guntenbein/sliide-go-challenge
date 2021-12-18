@@ -31,6 +31,8 @@ func runRequest(t *testing.T, srv http.Handler, r *http.Request) (content []*Con
 }
 
 func TestResponseCount(t *testing.T) {
+	app := bootstrapApp()
+
 	content := runRequest(t, app, SimpleContentRequest)
 
 	if len(content) != 5 {
@@ -40,6 +42,8 @@ func TestResponseCount(t *testing.T) {
 }
 
 func TestResponseOrder(t *testing.T) {
+	app := bootstrapApp()
+
 	content := runRequest(t, app, SimpleContentRequest)
 
 	if len(content) != 5 {
@@ -57,6 +61,8 @@ func TestResponseOrder(t *testing.T) {
 }
 
 func TestOffsetResponseOrder(t *testing.T) {
+	app := bootstrapApp()
+
 	content := runRequest(t, app, OffsetContentRequest)
 
 	if len(content) != 5 {

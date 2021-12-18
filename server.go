@@ -8,8 +8,7 @@ import (
 // App represents the server's internal state.
 // It holds configuration about providers and content
 type App struct {
-	ContentClients map[Provider]Client
-	Config         ContentMix
+	Service Service
 }
 
 func (App) ServeHTTP(w http.ResponseWriter, req *http.Request) {

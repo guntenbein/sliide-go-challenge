@@ -7,25 +7,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 )
 
 var (
 	addr = flag.String("addr", "127.0.0.1:8080", "the TCP address for the server to listen on, in the form 'host:port'")
-
-	// app gets initialised with configuration.
-	// as an example we've added 3 providers and a default configuration
-	app = App{
-		ContentClients: map[Provider]Client{
-			Provider1: SampleContentProvider{Source: Provider1},
-			Provider2: SampleContentProvider{Source: Provider2},
-			Provider3: SampleContentProvider{Source: Provider3},
-		},
-		Config: DefaultConfig,
-	}
 )
 
 func main() {
 	log.Printf("initalising server on %s", *addr)
+
+	app := bootstrapApp()
 
 	srv := http.Server{
 		Addr:    *addr,
@@ -52,4 +44,36 @@ func main() {
 	}
 
 	<-idleConnsClosed
+}
+
+func bootstrapApp() App {
+	cacher := NewTimeExpirationCacher(map[Provider]ProviderConfig{
+		Provider1: {
+			expiration: time.Minute * 10,
+			length:     100,
+			userIp:     "184.22.11.68",
+			client:     SampleContentProvider{Provider1},
+		},
+		Provider2: {
+			expiration: time.Minute * 10,
+			length:     100,
+			userIp:     "184.22.11.68",
+			client:     SampleContentProvider{Provider2},
+		},
+		Provider3: {
+			expiration: time.Minute * 10,
+			length:     100,
+			userIp:     "184.22.11.68",
+			client:     SampleContentProvider{Provider3},
+		},
+	})
+	// wait until we feed the data before starting the app
+	cacher.Update()
+
+	sequencer := MakeConfiguredSequencer(DefaultConfig)
+
+	service := MakeService(cacher, sequencer)
+
+	app := App{service}
+	return app
 }
