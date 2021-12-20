@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// TimeExpirationCacher the component to cache the data from the providers locally and refresh it on the time basis.
 type TimeExpirationCacher struct {
 	providerConfigs map[Provider]ProviderConfig
 	lastUpdate      map[Provider]time.Time
@@ -14,6 +15,7 @@ type TimeExpirationCacher struct {
 	finishWG        sync.WaitGroup
 }
 
+// NewTimeExpirationCacher the constructor of the TimeExpirationCacher
 func NewTimeExpirationCacher(providerConfigs map[Provider]ProviderConfig) *TimeExpirationCacher {
 	// todo validation here
 	cacher := &TimeExpirationCacher{
@@ -28,6 +30,7 @@ func NewTimeExpirationCacher(providerConfigs map[Provider]ProviderConfig) *TimeE
 	return cacher
 }
 
+// ProviderConfig the configuration for the provider for the TimeExpirationCacher
 type ProviderConfig struct {
 	expiration time.Duration
 	length     int
@@ -40,10 +43,12 @@ type inMemoryState struct {
 	fails   map[Provider]bool
 }
 
+// Fails returns if a given provider fails to be load.
 func (ims inMemoryState) Fails(p Provider) bool {
 	return ims.fails[p]
 }
 
+// ContentItem returns the content item for a given provider and index.
 func (ims inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
 	content := ims.content[addr.Provider]
 	if addr.Index >= len(content) {
@@ -74,6 +79,7 @@ func copyContentItems(contentItems []*ContentItem) []*ContentItem {
 	return out
 }
 
+// GetState returns the state with the content items saved locally and the information if a provider fails.
 func (tec *TimeExpirationCacher) GetState() State {
 	tec.stateLock.RLock()
 	state := tec.state.copy()
@@ -81,6 +87,7 @@ func (tec *TimeExpirationCacher) GetState() State {
 	return state
 }
 
+// Start starts the component, i.e. the routines to refresh the cache.
 func (tec *TimeExpirationCacher) Start() {
 	firstTimeWG := &sync.WaitGroup{}
 	firstTimeWG.Add(len(tec.providerConfigs))
@@ -106,6 +113,7 @@ func (tec *TimeExpirationCacher) Start() {
 	firstTimeWG.Wait()
 }
 
+// Stop stops the component, i.e. the routines to refresh the cache.
 func (tec *TimeExpirationCacher) Stop() {
 	close(tec.stopc)
 	tec.finishWG.Wait()

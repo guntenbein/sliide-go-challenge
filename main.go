@@ -51,19 +51,19 @@ func main() {
 func bootstrapApp() (app App, stop func()) {
 	cacher := NewTimeExpirationCacher(map[Provider]ProviderConfig{
 		Provider1: {
-			expiration: time.Second * 10,
-			length:     100,
+			expiration: time.Minute * 10,
+			length:     300,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider1},
 		},
 		Provider2: {
-			expiration: time.Second * 10,
+			expiration: time.Minute * 5,
 			length:     100,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider2},
 		},
 		Provider3: {
-			expiration: time.Second * 10,
+			expiration: time.Minute * 20,
 			length:     100,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider3},

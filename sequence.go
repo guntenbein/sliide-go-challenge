@@ -1,15 +1,19 @@
 package main
 
+// ConfiguredSequencer is the strategy for ordering the content items at the output page.
 type ConfiguredSequencer struct {
 	config ContentMix
 }
 
+// MakeConfiguredSequencer the constructor for the ConfiguredSequencer
 func MakeConfiguredSequencer(config ContentMix) ConfiguredSequencer {
 	return ConfiguredSequencer{
 		config: config,
 	}
 }
 
+// Sequence constructs the page of content addresses (provider+index) having the configuration,
+// the information about the failing providers and the offset+limit.
 func (sq ConfiguredSequencer) Sequence(state State, limit, offset int) (addresses []ContentAddress, err error) {
 	if limit < 0 || offset < 0 {
 		err = ValidationError("limit and offset should be positive")
