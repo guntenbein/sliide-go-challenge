@@ -10,28 +10,37 @@ func MakeConfiguredSequencer(config ContentMix) ConfiguredSequencer {
 	}
 }
 
-func (sq ConfiguredSequencer) Sequence(state State, limit, offset int) (addresses []ContentAddress) {
-	// todo validation here
+func (sq ConfiguredSequencer) Sequence(state State, limit, offset int) (addresses []ContentAddress, err error) {
+	if limit < 0 || offset < 0 {
+		err = ValidationError("limit and offset should be positive")
+		return
+	}
 	providersIndex := make(map[Provider]int, len(sq.config))
 	addresses = make([]ContentAddress, 0, limit)
-	for i := 0; i < offset+limit; {
-		for _, config := range sq.config {
-			provider := config.Type
-			if state.Fails(config.Type) {
-				if config.Fallback != nil && !state.Fails(*config.Fallback) {
-					provider = *config.Fallback
-				} else {
-					return
-				}
+	var configIndex int
+	for i := 0; i < offset+limit; i++ {
+		config := sq.config[configIndex]
+		provider := config.Type
+		if state.Fails(config.Type) {
+			if config.Fallback != nil && !state.Fails(*config.Fallback) {
+				provider = *config.Fallback
+			} else {
+				return
 			}
-			if i >= limit {
-				addresses = append(addresses, ContentAddress{
-					Provider: provider,
-					Index:    providersIndex[provider],
-				})
-			}
-			providersIndex[config.Type]++
-			i++
+		}
+		providersIndex[provider]++
+		if i >= offset {
+			addresses = append(addresses, ContentAddress{
+				Provider: provider,
+				Index:    providersIndex[provider],
+			})
+
+		}
+
+		if configIndex >= len(sq.config)-1 {
+			configIndex = 0
+		} else {
+			configIndex++
 		}
 	}
 	return

@@ -17,7 +17,7 @@ var (
 func main() {
 	log.Printf("initalising server on %s", *addr)
 
-	app := bootstrapApp()
+	app, stopApp := bootstrapApp()
 
 	srv := http.Server{
 		Addr:    *addr,
@@ -39,41 +39,43 @@ func main() {
 	}()
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		stopApp()
 		// Error starting or closing listener:
 		log.Fatalf("HTTP server ListenAndServe: %v", err)
 	}
 
+	stopApp()
 	<-idleConnsClosed
 }
 
-func bootstrapApp() App {
+func bootstrapApp() (app App, stop func()) {
 	cacher := NewTimeExpirationCacher(map[Provider]ProviderConfig{
 		Provider1: {
-			expiration: time.Minute * 10,
+			expiration: time.Second * 10,
 			length:     100,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider1},
 		},
 		Provider2: {
-			expiration: time.Minute * 10,
+			expiration: time.Second * 10,
 			length:     100,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider2},
 		},
 		Provider3: {
-			expiration: time.Minute * 10,
+			expiration: time.Second * 10,
 			length:     100,
 			userIp:     "184.22.11.68",
 			client:     SampleContentProvider{Provider3},
 		},
 	})
 	// wait until we feed the data before starting the app
-	cacher.Update()
+	cacher.Start()
 
 	sequencer := MakeConfiguredSequencer(DefaultConfig)
 
 	service := MakeService(cacher, sequencer)
 
-	app := App{service}
-	return app
+	app = App{service}
+	return app, func() { cacher.Stop() }
 }

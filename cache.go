@@ -10,7 +10,8 @@ type TimeExpirationCacher struct {
 	lastUpdate      map[Provider]time.Time
 	state           inMemoryState
 	stateLock       sync.RWMutex
-	updateLock      sync.Mutex
+	stopc           chan struct{}
+	finishWG        sync.WaitGroup
 }
 
 func NewTimeExpirationCacher(providerConfigs map[Provider]ProviderConfig) *TimeExpirationCacher {
@@ -22,6 +23,7 @@ func NewTimeExpirationCacher(providerConfigs map[Provider]ProviderConfig) *TimeE
 			fails:   make(map[Provider]bool, len(providerConfigs)),
 		},
 		lastUpdate: make(map[Provider]time.Time, len(providerConfigs)),
+		stopc:      make(chan struct{}),
 	}
 	return cacher
 }
@@ -51,21 +53,21 @@ func (ims inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
 }
 
 func (ims inMemoryState) copy() inMemoryState {
-	copy := inMemoryState{
+	c := inMemoryState{
 		content: make(map[Provider][]*ContentItem, len(ims.content)),
 		fails:   make(map[Provider]bool, len(ims.fails)),
 	}
 	for k, v := range ims.fails {
-		copy.fails[k] = v
+		c.fails[k] = v
 	}
 	for k, v := range ims.content {
-		copy.content[k] = copyContentItems(v)
+		c.content[k] = copyContentItems(v)
 	}
-	return copy
+	return c
 }
 
 func copyContentItems(contentItems []*ContentItem) []*ContentItem {
-	out := make([]*ContentItem, 0, len(contentItems))
+	out := make([]*ContentItem, len(contentItems))
 	for i, v := range contentItems {
 		out[i] = v
 	}
@@ -73,29 +75,43 @@ func copyContentItems(contentItems []*ContentItem) []*ContentItem {
 }
 
 func (tec *TimeExpirationCacher) GetState() State {
-	go tec.Update()
 	tec.stateLock.RLock()
 	state := tec.state.copy()
 	tec.stateLock.RUnlock()
 	return state
 }
 
-func (tec *TimeExpirationCacher) Update() {
-	tec.updateLock.Lock()
-	wg := &sync.WaitGroup{}
+func (tec *TimeExpirationCacher) Start() {
+	firstTimeWG := &sync.WaitGroup{}
+	firstTimeWG.Add(len(tec.providerConfigs))
+	tec.finishWG.Add(len(tec.providerConfigs))
 	for provider, providerConfig := range tec.providerConfigs {
-		now := time.Now()
-		updateTime := tec.lastUpdate[provider]
-		if now.Sub(updateTime) > providerConfig.expiration {
-			wg.Add(1)
-			go tec.updateProvider(provider, providerConfig, wg)
-		}
+		p := provider
+		pc := providerConfig
+		go func() {
+			tec.updateProvider(p, pc)
+			firstTimeWG.Done()
+			timer := time.NewTimer(pc.expiration)
+			for {
+				select {
+				case <-timer.C:
+					tec.updateProvider(p, pc)
+				case <-tec.stopc:
+					tec.finishWG.Done()
+					return
+				}
+			}
+		}()
 	}
-	wg.Wait()
-	tec.updateLock.Unlock()
+	firstTimeWG.Wait()
 }
 
-func (tec *TimeExpirationCacher) updateProvider(provider Provider, providerConfig ProviderConfig, wg *sync.WaitGroup) {
+func (tec *TimeExpirationCacher) Stop() {
+	close(tec.stopc)
+	tec.finishWG.Wait()
+}
+
+func (tec *TimeExpirationCacher) updateProvider(provider Provider, providerConfig ProviderConfig) {
 	client := providerConfig.client
 	if client != nil {
 		content, err := client.GetContent(providerConfig.userIp, providerConfig.length)
@@ -103,10 +119,10 @@ func (tec *TimeExpirationCacher) updateProvider(provider Provider, providerConfi
 		if err != nil {
 			tec.state.fails[provider] = true
 		} else {
+			tec.state.fails[provider] = false
 			tec.state.content[provider] = content
 		}
-		tec.stateLock.Unlock()
 		tec.lastUpdate[provider] = time.Now()
+		tec.stateLock.Unlock()
 	}
-	wg.Done()
 }

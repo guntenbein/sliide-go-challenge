@@ -31,7 +31,8 @@ func runRequest(t *testing.T, srv http.Handler, r *http.Request) (content []*Con
 }
 
 func TestResponseCount(t *testing.T) {
-	app := bootstrapApp()
+	app, stop := bootstrapApp()
+	defer stop()
 
 	content := runRequest(t, app, SimpleContentRequest)
 
@@ -42,7 +43,8 @@ func TestResponseCount(t *testing.T) {
 }
 
 func TestResponseOrder(t *testing.T) {
-	app := bootstrapApp()
+	app, stop := bootstrapApp()
+	defer stop()
 
 	content := runRequest(t, app, SimpleContentRequest)
 
@@ -61,7 +63,8 @@ func TestResponseOrder(t *testing.T) {
 }
 
 func TestOffsetResponseOrder(t *testing.T) {
-	app := bootstrapApp()
+	app, stop := bootstrapApp()
+	defer stop()
 
 	content := runRequest(t, app, OffsetContentRequest)
 

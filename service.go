@@ -1,5 +1,11 @@
 package main
 
+type ValidationError string
+
+func (ve ValidationError) Error() string {
+	return string(ve)
+}
+
 type Service struct {
 	cacher    Cacher
 	sequencer Sequencer
@@ -27,14 +33,20 @@ type ContentAddress struct {
 }
 
 type Sequencer interface {
-	Sequence(state State, limit, offset int) []ContentAddress
+	Sequence(state State, limit, offset int) ([]ContentAddress, error)
 }
 
 func (s Service) ContentItems(limit, offset int) (output []*ContentItem, err error) {
-	// todo validation
-	output = make([]*ContentItem, 0, limit)
+	if limit < 0 || offset < 0 {
+		err = ValidationError("limit and offset should be positive")
+		return
+	}
+	output = make([]*ContentItem, limit)
 	state := s.cacher.GetState()
-	addressSequence := s.sequencer.Sequence(state, limit, offset)
+	addressSequence, err := s.sequencer.Sequence(state, limit, offset)
+	if err != nil {
+		return nil, err
+	}
 	for n, address := range addressSequence {
 		output[n] = state.ContentItem(address)
 	}

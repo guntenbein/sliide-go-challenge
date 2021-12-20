@@ -1,5 +1,5 @@
 build:
-	go build -o ./server -v ./main.go
+	go build -o ./server -v
 
 test:
 	go test -v -short -race ./...

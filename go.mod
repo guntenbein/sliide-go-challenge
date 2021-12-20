@@ -1,3 +1,3 @@
-module github.com/sliide/go-test
+module sliide
 
-go 1.14
+go 1.16
