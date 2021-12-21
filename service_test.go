@@ -35,7 +35,7 @@ func TestService_ContentItems(t *testing.T) {
 			},
 			err: nil,
 		}
-		c := testCacher{state: inMemoryState{
+		c := testCacher{state: &inMemoryState{
 			content: map[Provider][]*ContentItem{
 				"p1": {
 					&ContentItem{ID: "p1-0"},
@@ -64,7 +64,7 @@ func TestService_ContentItems(t *testing.T) {
 			},
 			err: nil,
 		}
-		c := testCacher{state: inMemoryState{
+		c := testCacher{state: &inMemoryState{
 			content: map[Provider][]*ContentItem{
 				"p1": {
 					&ContentItem{ID: "p1-0"},
@@ -88,7 +88,7 @@ func TestService_ContentItems(t *testing.T) {
 			addresses: nil,
 			err:       errors.New("some error"),
 		}
-		c := testCacher{state: inMemoryState{
+		c := testCacher{state: &inMemoryState{
 			content: map[Provider][]*ContentItem{
 				"p1": {
 					&ContentItem{ID: "p1-0"},
@@ -106,7 +106,7 @@ func TestService_ContentItems(t *testing.T) {
 			addresses: []ContentAddress{{Provider: "p1", Index: 0}},
 			err:       nil,
 		}
-		c := testCacher{state: inMemoryState{
+		c := testCacher{state: &inMemoryState{
 			content: map[Provider][]*ContentItem{"p1": {&ContentItem{ID: "p1-0"}}},
 		}}
 		_, err := MakeService(c, s).ContentItems(-1, 0)
@@ -117,7 +117,7 @@ func TestService_ContentItems(t *testing.T) {
 			addresses: []ContentAddress{{Provider: "p1", Index: 0}},
 			err:       nil,
 		}
-		c := testCacher{state: inMemoryState{
+		c := testCacher{state: &inMemoryState{
 			content: map[Provider][]*ContentItem{"p1": {&ContentItem{ID: "p1-0"}}},
 		}}
 		_, err := MakeService(c, s).ContentItems(10, -1)

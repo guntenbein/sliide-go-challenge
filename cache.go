@@ -9,7 +9,7 @@ import (
 type TimeExpirationCacher struct {
 	providerConfigs map[Provider]ProviderConfig
 	lastUpdate      map[Provider]time.Time
-	state           inMemoryState
+	state           *inMemoryState
 	stateLock       sync.RWMutex
 	stopc           chan struct{}
 	finishWG        sync.WaitGroup
@@ -20,7 +20,7 @@ func NewTimeExpirationCacher(providerConfigs map[Provider]ProviderConfig) *TimeE
 	// todo validation here
 	cacher := &TimeExpirationCacher{
 		providerConfigs: providerConfigs,
-		state: inMemoryState{
+		state: &inMemoryState{
 			content: make(map[Provider][]*ContentItem, len(providerConfigs)),
 			fails:   make(map[Provider]bool, len(providerConfigs)),
 		},
@@ -44,12 +44,12 @@ type inMemoryState struct {
 }
 
 // Fails returns if a given provider fails to be load.
-func (ims inMemoryState) Fails(p Provider) bool {
+func (ims *inMemoryState) Fails(p Provider) bool {
 	return ims.fails[p]
 }
 
 // ContentItem returns the content item for a given provider and index.
-func (ims inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
+func (ims *inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
 	content := ims.content[addr.Provider]
 	if addr.Index >= len(content) {
 		return nil
@@ -57,8 +57,11 @@ func (ims inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
 	return content[addr.Index]
 }
 
-func (ims inMemoryState) copy() inMemoryState {
-	c := inMemoryState{
+func (ims *inMemoryState) copy() *inMemoryState {
+	if ims == nil {
+		return nil
+	}
+	c := &inMemoryState{
 		content: make(map[Provider][]*ContentItem, len(ims.content)),
 		fails:   make(map[Provider]bool, len(ims.fails)),
 	}
@@ -82,7 +85,7 @@ func copyContentItems(contentItems []*ContentItem) []*ContentItem {
 // GetState returns the state with the content items saved locally and the information if a provider fails.
 func (tec *TimeExpirationCacher) GetState() State {
 	tec.stateLock.RLock()
-	state := tec.state.copy()
+	state := tec.state
 	tec.stateLock.RUnlock()
 	return state
 }
@@ -124,12 +127,14 @@ func (tec *TimeExpirationCacher) updateProvider(provider Provider, providerConfi
 	if client != nil {
 		content, err := client.GetContent(providerConfig.userIp, providerConfig.length)
 		tec.stateLock.Lock()
+		newState := tec.state.copy()
 		if err != nil {
-			tec.state.fails[provider] = true
+			newState.fails[provider] = true
 		} else {
-			tec.state.fails[provider] = false
-			tec.state.content[provider] = content
+			newState.fails[provider] = false
+			newState.content[provider] = content
 		}
+		tec.state = newState
 		tec.lastUpdate[provider] = time.Now()
 		tec.stateLock.Unlock()
 	}
