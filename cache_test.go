@@ -99,17 +99,16 @@ func TestTimeExpirationCacher_GetState(t *testing.T) {
 		})
 		cacher.Start()
 		defer cacher.Stop()
-		empty := &ContentItem{}
 		state := cacher.GetState()
 		received := state.ContentItem(ContentAddress{
 			Provider: Provider1,
 			Index:    50,
 		})
-		assert.NotEqualValues(t, empty, received)
+		assert.NotNil(t, received)
 		received = state.ContentItem(ContentAddress{
 			Provider: Provider1,
 			Index:    500,
 		})
-		assert.EqualValues(t, empty, received)
+		assert.Nil(t, received)
 	})
 }

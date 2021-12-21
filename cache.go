@@ -52,7 +52,7 @@ func (ims inMemoryState) Fails(p Provider) bool {
 func (ims inMemoryState) ContentItem(addr ContentAddress) *ContentItem {
 	content := ims.content[addr.Provider]
 	if addr.Index >= len(content) {
-		return &ContentItem{}
+		return nil
 	}
 	return content[addr.Index]
 }

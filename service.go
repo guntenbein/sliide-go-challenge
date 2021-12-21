@@ -48,14 +48,17 @@ func (s Service) ContentItems(limit, offset int) (output []*ContentItem, err err
 		err = ValidationError("limit and offset should be positive")
 		return
 	}
-	output = make([]*ContentItem, limit)
+	output = make([]*ContentItem, 0, limit)
 	state := s.cacher.GetState()
 	addressSequence, err := s.sequencer.Sequence(state, limit, offset)
 	if err != nil {
 		return nil, err
 	}
-	for n, address := range addressSequence {
-		output[n] = state.ContentItem(address)
+	for _, address := range addressSequence {
+		ci := state.ContentItem(address)
+		if ci != nil {
+			output = append(output, state.ContentItem(address))
+		}
 	}
 	return
 }
