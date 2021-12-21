@@ -59,6 +59,7 @@ func getParameters(w http.ResponseWriter, req *http.Request) (limit, offset int,
 }
 
 func writeInternalServerErrorResponse(w http.ResponseWriter, err error) {
+	log.Print("internal server error: " + err.Error())
 	w.WriteHeader(http.StatusInternalServerError)
 	if _, err := w.Write([]byte("internal server error: " + err.Error())); err != nil {
 		log.Println("error when trying to write data to HTTP response: " + err.Error())
@@ -66,6 +67,7 @@ func writeInternalServerErrorResponse(w http.ResponseWriter, err error) {
 }
 
 func writeValidationErrorResponse(w http.ResponseWriter, err error) {
+	log.Print("validation error: " + err.Error())
 	w.WriteHeader(http.StatusBadRequest)
 	if _, err := w.Write([]byte("invalid input parameters: " + err.Error())); err != nil {
 		log.Println("error when trying to write data to HTTP response: " + err.Error())

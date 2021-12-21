@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"log"
+)
+
 type ValidationError string
 
 func (ve ValidationError) Error() string {
@@ -44,6 +49,10 @@ type Sequencer interface {
 
 // ContentItems returns the desired content items.
 func (s Service) ContentItems(limit, offset int) (output []*ContentItem, err error) {
+	log.Print(fmt.Sprintf("called ContentItems with parameters limit=%d, offset=%d", limit, offset))
+	defer log.Print(fmt.Sprintf("finished ContentItems with parameters limit=%d, offset=%d, error: %s",
+		limit, offset, err))
+
 	if limit < 0 || offset < 0 {
 		err = ValidationError("limit and offset should be positive")
 		return
