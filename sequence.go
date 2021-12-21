@@ -32,14 +32,13 @@ func (sq ConfiguredSequencer) Sequence(state State, limit, offset int) (addresse
 				return
 			}
 		}
-		providersIndex[provider]++
 		if i >= offset {
 			addresses = append(addresses, ContentAddress{
 				Provider: provider,
 				Index:    providersIndex[provider],
 			})
-
 		}
+		providersIndex[provider]++
 
 		if configIndex >= len(sq.config)-1 {
 			configIndex = 0
