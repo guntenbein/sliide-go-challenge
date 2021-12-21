@@ -42,6 +42,15 @@ func TestResponseCount(t *testing.T) {
 
 }
 
+func BenchmarkResponse(b *testing.B) {
+	app, stop := bootstrapApp()
+	defer stop()
+
+	for i := 0; i < b.N; i++ {
+		runRequest(nil, app, SimpleContentRequest)
+	}
+}
+
 func TestResponseOrder(t *testing.T) {
 	app, stop := bootstrapApp()
 	defer stop()
