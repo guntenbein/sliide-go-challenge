@@ -32,8 +32,13 @@ type Cacher interface {
 
 // State keeps the desired content iteems and information about the provider health.
 type State interface {
-	Fails(p Provider) bool
+	FailsState
 	ContentItem(addr ContentAddress) *ContentItem
+}
+
+// FailsState keeps the information about the provider health.
+type FailsState interface {
+	Fails(p Provider) bool
 }
 
 // ContentAddress contains the information about the provider and the index of the data.
@@ -44,7 +49,7 @@ type ContentAddress struct {
 
 // Sequencer makes the sequence of provider+index for the given input page.
 type Sequencer interface {
-	Sequence(state State, limit, offset int) ([]ContentAddress, error)
+	Sequence(state FailsState, limit, offset int) ([]ContentAddress, error)
 }
 
 // ContentItems returns the desired content items.

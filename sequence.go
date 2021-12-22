@@ -14,7 +14,7 @@ func MakeConfiguredSequencer(config ContentMix) ConfiguredSequencer {
 
 // Sequence constructs the page of content addresses (provider+index) having the configuration,
 // the information about the failing providers and the offset+limit.
-func (sq ConfiguredSequencer) Sequence(state State, limit, offset int) (addresses []ContentAddress, err error) {
+func (sq ConfiguredSequencer) Sequence(state FailsState, limit, offset int) (addresses []ContentAddress, err error) {
 	if limit < 0 || offset < 0 {
 		err = ValidationError("limit and offset should be positive")
 		return

@@ -13,7 +13,7 @@ type testSequencer struct {
 	err       error
 }
 
-func (t testSequencer) Sequence(state State, limit, offset int) ([]ContentAddress, error) {
+func (t testSequencer) Sequence(state FailsState, limit, offset int) ([]ContentAddress, error) {
 	return t.addresses, t.err
 }
 
